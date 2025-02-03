@@ -1,0 +1,8 @@
+[MASTER]
+load-plugins=pylint_django
+
+[FORMAT]
+indent-string='  '
+
+[TYPECHECK]
+django-settings-module=GenToken.settings

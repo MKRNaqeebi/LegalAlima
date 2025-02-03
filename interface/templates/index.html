@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chatbot Interface</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css?family=Red+Hat+Display:400,500,900&display=swap");
+      body,
+      html {
+        font-family: Red hat Display, sans-serif;
+        font-weight: 400;
+        line-height: 1.25em;
+        letter-spacing: 0.025em;
+        color: #333;
+        background: #f7f7f7;
+      }
+      .chat .messages .time {
+        font-size: 0.8rem;
+        background: #EEE;
+        padding: 0.25rem 1rem;
+        border-radius: 2rem;
+        color: #999;
+        width: -webkit-fit-content;
+        width: -moz-fit-content;
+        width: fit-content;
+        margin: 0 auto;
+        cursor: pointer;
+      }
+      .chat {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        width: 75rem;
+        height: 45rem;
+        box-sizing: border-box;
+        border-radius: 1rem;
+        background: white;
+        margin: auto;
+        box-shadow: 0 0 8rem 0 rgba(0, 0, 0, 0.1),
+          0rem 2rem 4rem -3rem rgba(0, 0, 0, 0.5);
+      }
+      .chat .messages {
+        padding: 1rem;
+        background: #f7f7f7;
+        flex-shrink: 2;
+        overflow-y: auto;
+        height: 44rem;
+        box-shadow: inset 0 2rem 2rem -2rem rgba(0, 0, 0, 0.05),
+          inset 0 -2rem 2rem -2rem rgba(0, 0, 0, 0.05);
+      }
+      .chat .messages .message {
+        box-sizing: border-box;
+        padding: 0.5rem 1rem;
+        margin: 1rem;
+        background: #fff;
+        border-radius: 1.125rem 1.125rem 1.125rem 0;
+        min-height: 2.25rem;
+        width: -webkit-fit-content;
+        width: -moz-fit-content;
+        width: fit-content;
+        max-width: 66%;
+        box-shadow: 0 0 2rem rgba(0, 0, 0, 0.075),
+          0rem 1rem 1rem -1rem rgba(0, 0, 0, 0.1);
+      }
+      .chat .messages .message.user {
+        margin: 1rem 1rem 1rem auto;
+        border-radius: 1.125rem 1.125rem 0 1.125rem;
+        background: #333;
+        color: white;
+      }
+      .chat .messages .message .typing {
+        display: inline-block;
+        width: 0.8rem;
+        height: 0.8rem;
+        margin-right: 0rem;
+        box-sizing: border-box;
+        background: #ccc;
+        border-radius: 50%;
+      }
+      .chat .messages .message .typing.typing-1 {
+        -webkit-animation: typing 3s infinite;
+        animation: typing 3s infinite;
+      }
+      .chat .messages .message .typing.typing-2 {
+        -webkit-animation: typing 3s 250ms infinite;
+        animation: typing 3s 250ms infinite;
+      }
+      .chat .messages .message .typing.typing-3 {
+        -webkit-animation: typing 3s 500ms infinite;
+        animation: typing 3s 500ms infinite;
+      }
+      .chat .input {
+        box-sizing: border-box;
+        flex-basis: 4rem;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        padding: 0 0.5rem 0 1.5rem;
+      }
+      .chat .input input {
+        border: none;
+        background-image: none;
+        background-color: white;
+        padding: 0.5rem 1rem;
+        margin-right: 1rem;
+        border-radius: 1.125rem;
+        flex-grow: 2;
+        box-shadow: 0 0 1rem rgba(0, 0, 0, 0.1),
+          0rem 1rem 1rem -1rem rgba(0, 0, 0, 0.2);
+        font-family: Red hat Display, sans-serif;
+        font-weight: 400;
+        letter-spacing: 0.025em;
+      }
+      .chat .input input:placeholder {
+        color: #999;
+      }
+      @-webkit-keyframes typing {
+        0%,
+        75%,
+        100% {
+          transform: translate(0, 0.25rem) scale(0.9);
+          opacity: 0.5;
+        }
+        25% {
+          transform: translate(0, -0.25rem) scale(1);
+          opacity: 1;
+        }
+      }
+      @keyframes typing {
+        0%,
+        75%,
+        100% {
+          transform: translate(0, 0.25rem) scale(0.9);
+          opacity: 0.5;
+        }
+        25% {
+          transform: translate(0, -0.25rem) scale(1);
+          opacity: 1;
+        }
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@metamask/onboarding@latest/dist/metamask-onboarding.bundle.js"></script>
+  </head>
+  <body>
+    <div class="chat">
+      <div class="messages" id="chat">
+      </div>
+      <div class="input">
+        <input placeholder="Type your message here!" type="text" id="user-input" />
+      </div>
+    </div>
+    <script>
+      const onboarding = new MetaMaskOnboarding();
+      let ethereumAccounts = [];
+      let token_params = {};
+      const chatContainer = document.getElementById("chat");
+
+      function createLoadingElement(){
+        const loadingElement = document.createElement("div");
+        loadingElement.className = "message assistant";
+        loadingElement.innerHTML = `
+          <div class="typing typing-1"></div>
+          <div class="typing typing-2"></div>
+          <div class="typing typing-3"></div>
+        `;
+        loadingElement.id = "loadingElement";
+        chatContainer.appendChild(loadingElement);
+      }
+
+      function createDeployElement(){
+        const oldButton = document.getElementById("deployButton");
+        if (oldButton) {
+          oldButton.remove();
+        }
+        const element = document.createElement("div");
+        element.className = "time";
+        element.id = "deployButton";
+        element.addEventListener("click", deployButtonEventListener);
+        element.textContent = "Deploy Contract";
+        chatContainer.appendChild(element);
+      }
+
+      function createMessageElement(role, message) {
+        const messageElement = document.createElement("div");
+        messageElement.textContent = message;
+        messageElement.className = `message ${role}`;
+        chatContainer.appendChild(messageElement);
+      }
+
+      let connected = (accounts) => {
+        console.log(accounts);
+        ethereumAccounts = accounts;
+      };
+
+      const onClickInstallMetaMask = () => {
+        onboarding.startOnboarding();
+      };
+
+      const isMetaMaskInstalled = () => {
+        const { ethereum } = window;
+        return Boolean(ethereum && ethereum.isMetaMask);
+      };
+
+      async function connectWallet() {
+        return await ethereum.request({ method: "eth_accounts" });
+      }
+
+      function getLastTokenParams() {
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", "/api/token-params/", true);
+        xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        xhr.setRequestHeader("X-CSRFToken", "{{csrf_token}}");
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState === 4 && xhr.status < 204) {
+            const response = JSON.parse(xhr.responseText);
+            token_params = response[0];
+            const loadingElement = document.getElementById("loadingElement");
+            if (loadingElement) {
+              loadingElement.remove();
+            }
+            createMessageElement("assistant", `Token Params: ${JSON.stringify(token_params, null, 2)}`);
+            createDeployElement();
+          }
+        };
+        xhr.send();
+      }
+
+      function sendMessage() {
+        const userInput = document.getElementById("user-input").value;
+        if (userInput.trim() === "") return;
+        createMessageElement("user", userInput);
+        createLoadingElement();
+        document.getElementById("user-input").value = "";
+        // Send the message to the server using AJAX
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/messages/", true);
+        xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        xhr.setRequestHeader("X-CSRFToken", "{{csrf_token}}");
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState === 4 && xhr.status < 204) {
+            getLastTokenParams();
+          }
+        };
+        xhr.send(JSON.stringify({ content: userInput, role: "user", chat: 1 }));
+      }
+      document.getElementById("user-input").addEventListener("keypress", function (e) {
+        if (e.key === "Enter") {
+          sendMessage();
+        }
+      });
+
+      const MetaMaskClientCheck = () => {
+        if (!isMetaMaskInstalled()) {
+          onClickInstallMetaMask();
+        } else {
+          connectWallet().then((accounts) => {
+            if (accounts && accounts[0] > 0) {
+              connected(accounts);
+            } else {
+              try {
+                ethereum
+                  .request({ method: "eth_requestAccounts" })
+                  .then((accounts) => {
+                    connected(accounts);
+                  });
+              } catch (error) {
+                console.error(error);
+              }
+            }
+          });
+        }
+      };
+
+      deployButtonEventListener = () => {
+        const deployButton = document.getElementById("deployButton");
+        if (deployButton) {
+          deployButton.remove();
+        }
+        createMessageElement("user", "Deploy Contract");
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/deploy-tokens/", true);
+        xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+        xhr.setRequestHeader("X-CSRFToken", "{{csrf_token}}");
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState === 4 && xhr.status < 204) {
+            const response = JSON.parse(xhr.responseText);
+            createMessageElement("assistant", response.transaction_hash);
+            // remove input field
+            const inputField = document.querySelector(".input");
+            if (inputField) {
+              inputField.remove();
+            }
+          }
+        };
+        xhr.send(
+          JSON.stringify({
+            chat: 1,
+            address: '0x50558f520Dfaa1D554502F975a91839FA61B1358',
+            token_params: token_params.id,
+          })
+        );
+      };
+      var chat = document.getElementById("chat");
+      chat.scrollTop = chat.scrollHeight - chat.clientHeight;
+      // MetaMaskClientCheck();
+    </script>
+  </body>
+</html>
